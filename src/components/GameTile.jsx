@@ -54,7 +54,7 @@ const GameTile = ({ id }) => {
     // We use a ref and simple JSX, assuming Electron environment allows it.
 
     // Check if running in Electron
-    const isElectron = window.ipcRenderer || (window.process && window.process.versions && window.process.versions.electron);
+    const isElectron = /electron/i.test(navigator.userAgent);
 
     return (
         <div className={`flex flex-col h-full border-2 ${!isMuted ? 'border-yellow-500' : 'border-gray-800'} bg-black overflow-hidden relative rounded-xl`}>
@@ -114,16 +114,26 @@ const GameTile = ({ id }) => {
                             webpreferences="contextIsolation=true, nodeIntegration=false"
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-4 text-center">
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-4 text-center relative">
                             <iframe
                                 src={activeUrl}
                                 className="w-full h-full border-none"
                                 title={`Tile ${id}`}
                                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                             />
-                            {/* Fallback overlay if iframe is blocked */}
-                            <div className="absolute top-0 left-0 w-full h-8 bg-orange-600/50 text-xs flex items-center justify-center pointer-events-none">
-                                Web View - Some sites may block embedding
+                            {/* Fallback overlay */}
+                            <div className="absolute top-0 left-0 w-full flex flex-col items-center pointer-events-none">
+                                <div className="w-full h-8 bg-orange-600/90 text-xs flex items-center justify-between px-4 text-white z-10 pointer-events-auto">
+                                    <span>Web View - Sites may block embedding</span>
+                                    <a
+                                        href={activeUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bg-black/50 hover:bg-black/80 px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors"
+                                    >
+                                        Open in New Tab ↗
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     )
