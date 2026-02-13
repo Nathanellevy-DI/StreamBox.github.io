@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dashboard-bg: #000000;
+  --color-tile-border: #333333;
+  --color-tile-active: #ffffff;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-dashboard-bg);
+  color: white;
+  overflow: hidden;
+  /* Hide scrollbars for full screen app feel */
+}
