@@ -54,7 +54,9 @@ const GameTile = ({ id }) => {
     // We use a ref and simple JSX, assuming Electron environment allows it.
 
     // Check if running in Electron
-    const isElectron = /electron/i.test(navigator.userAgent);
+    // Check if running in Electron (robust check)
+    const isElectron = /electron/i.test(navigator.userAgent) ||
+        (window.process && window.process.versions && window.process.versions.electron);
 
     return (
         <div className={`flex flex-col h-full border-2 ${!isMuted ? 'border-yellow-500' : 'border-gray-800'} bg-black overflow-hidden relative rounded-xl`}>
