@@ -54,7 +54,7 @@ const GameTile = ({ id }) => {
     // We use a ref and simple JSX, assuming Electron environment allows it.
 
     return (
-        <div className={`flex flex-col h-full border-2 ${!isMuted ? 'border-yellow-500' : 'border-gray-800'} bg-black overflow-hidden relative`}>
+        <div className={`flex flex-col h-full border-2 ${!isMuted ? 'border-yellow-500' : 'border-gray-800'} bg-black overflow-hidden relative rounded-xl`}>
             {/* Mini-Header */}
             <div className="flex items-center justify-between bg-gray-900 p-1 h-8 text-xs">
                 <div className="flex space-x-2">

@@ -62,7 +62,7 @@ const Dashboard = () => {
     // We can render tiles.
 
     return (
-        <div className={`h-screen w-screen grid ${gridClass} bg-black gap-1`}>
+        <div className={`h-full w-full grid ${gridClass} bg-black gap-2 p-2`}>
             {Array.from({ length: numTiles }).map((_, idx) => (
                 <GameTile key={idx} id={idx + 1} />
             ))}
