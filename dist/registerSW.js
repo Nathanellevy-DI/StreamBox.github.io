@@ -1,1 +1,0 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/StreamBox.github.io/sw.js', { scope: '/StreamBox.github.io/' })})}
