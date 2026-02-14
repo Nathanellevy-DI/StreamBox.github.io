@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 
-
 const GameTile = ({ id }) => {
     const [url, setUrl] = useState('');
     const [activeUrl, setActiveUrl] = useState('');
@@ -53,7 +52,6 @@ const GameTile = ({ id }) => {
     // React requires specific handling for custom elements like webview
     // We use a ref and simple JSX, assuming Electron environment allows it.
 
-    // Check if running in Electron
     // Check if running in Electron (robust check)
     const isElectron = /electron/i.test(navigator.userAgent) ||
         (window.process && window.process.versions && window.process.versions.electron);
@@ -107,6 +105,7 @@ const GameTile = ({ id }) => {
                     </form>
                 ) : (
                     isElectron ? (
+                        // Electron Mode: Use full webview
                         <webview
                             ref={webviewRef}
                             src={activeUrl}
@@ -116,6 +115,7 @@ const GameTile = ({ id }) => {
                             webpreferences="contextIsolation=true, nodeIntegration=false"
                         />
                     ) : (
+                        // Web Mode: Use Iframe with Fallback
                         <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-4 text-center relative">
                             <iframe
                                 src={activeUrl}
@@ -125,13 +125,14 @@ const GameTile = ({ id }) => {
                             />
                             {/* Fallback overlay */}
                             <div className="absolute top-0 left-0 w-full flex flex-col items-center pointer-events-none">
-                                <div className="w-full h-8 bg-orange-600/90 text-xs flex items-center justify-between px-4 text-white z-10 pointer-events-auto">
-                                    <span>Web View - Sites may block embedding</span>
+                                <div className="w-full h-fit bg-red-600/90 text-xs flex flex-col items-center justify-center p-2 text-white z-10 pointer-events-auto gap-1">
+                                    <span className="font-bold">Web Version Limited</span>
+                                    <span>Google & Streams block embedding.</span>
                                     <a
                                         href={activeUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="bg-black/50 hover:bg-black/80 px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors"
+                                        className="bg-white text-red-600 hover:bg-gray-200 px-3 py-1 rounded text-xs font-bold uppercase transition-colors"
                                     >
                                         Open in New Tab ↗
                                     </a>
