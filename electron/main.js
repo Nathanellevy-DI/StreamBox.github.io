@@ -57,9 +57,9 @@ function createWindow() {
         });
     });
 
-    // If you're using React, it's usually localhost:3000
-    // My setup uses 5173.
-    if (process.env.NODE_ENV === 'development') {
+    // If running via 'electron .' (not packaged), verify using isPackaged
+    // This is more robust than NODE_ENV which defaults to undefined on Windows
+    if (!app.isPackaged) {
         win.loadURL('http://localhost:5173');
         win.webContents.openDevTools();
     } else {

@@ -49,7 +49,14 @@ Now we use the "Command Prompt" to start the app.
         ```
     *   *Wait for it to finish. You might see some warnings (yellow text), that is normal. Wait for it to stop moving.*
 
-4.  **Start the App**:
+4.  **Build the app** (Fixes white screen issues):
+    *   Type this and press **Enter**:
+        ```bash
+        npm run build
+        ```
+    *   *Wait for it to finish.*
+
+5.  **Start the App**:
     *   Type this and press **Enter**:
         ```bash
         npm run dev
