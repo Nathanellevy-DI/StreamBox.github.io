@@ -23,6 +23,40 @@ function createWindow() {
         },
     });
 
+    // Security: Handle the creation of webviews to ensure they are safe but functional
+    win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+        // Strip away preload scripts if allowing untrusted content
+        delete webPreferences.preload;
+
+        // Disable Node.js integration in the *guest* page (the stream)
+        webPreferences.nodeIntegration = false;
+        webPreferences.contextIsolation = true;
+
+        // CRITICAL FOR STREAMS: Disable webSecurity to allow cross-origin streams and mixed content
+        // This effectively allows the webview to behave more like a real browser tab
+        webPreferences.webSecurity = false;
+    });
+
+    // NUCLEAR OPTION: Strip X-Frame-Options and CSP headers to force sites to load in iframes/webviews
+    // This bypasses "Refused to connect" caused by the site saying "Don't frame me"
+    win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+        const responseHeaders = Object.assign({}, details.responseHeaders);
+
+        // Remove the headers that block embedding
+        const blockHeaders = ['x-frame-options', 'content-security-policy', 'frame-options'];
+
+        Object.keys(responseHeaders).forEach((header) => {
+            if (blockHeaders.includes(header.toLowerCase())) {
+                delete responseHeaders[header];
+            }
+        });
+
+        callback({
+            cancel: false,
+            responseHeaders: responseHeaders,
+        });
+    });
+
     // If you're using React, it's usually localhost:3000
     // My setup uses 5173.
     if (process.env.NODE_ENV === 'development') {
