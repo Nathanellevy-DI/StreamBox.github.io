@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function GameTile({ id }) {
+export default function GameTile({ id, onRemove }) {
     const [url, setUrl] = useState("");
     const [active, setActive] = useState(false);
     const webviewRef = React.useRef(null); // Ref for accessing webview methods
@@ -53,10 +53,39 @@ export default function GameTile({ id }) {
                     </button>
                     <button
                         onClick={handleExit}
-                        className="p-2 text-red-500 hover:text-red-400 hover:bg-gray-700/50 transition-colors"
-                        title="Close Stream"
+                        className="p-2 text-white hover:text-red-400 hover:bg-gray-700/50 transition-colors"
+                        title="Close Stream (Keep Tile)"
                     >
                         ✕
+                    </button>
+                    <div className="w-[1px] h-4 bg-gray-600 mx-1"></div>
+                    <button
+                        onClick={() => {
+                            if (window.confirm("Delete this screen entirely?")) {
+                                onRemove();
+                            }
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-900/30 transition-colors"
+                        title="Remove Tile"
+                    >
+                        🗑️
+                    </button>
+                </div>
+            )}
+
+            {/* Always visible 'Remove Tile' for empty state */}
+            {!active && (
+                <div className="absolute top-0 right-0 p-2 z-40 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={() => {
+                            if (window.confirm("Delete this screen entirely?")) {
+                                onRemove();
+                            }
+                        }}
+                        className="text-red-600 hover:text-red-400 font-bold"
+                        title="Remove Tile"
+                    >
+                        🗑️
                     </button>
                 </div>
             )}

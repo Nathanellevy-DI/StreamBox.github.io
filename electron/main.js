@@ -1,12 +1,15 @@
 /* eslint-env node */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
+// Hide automation flags from Google
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
+// Spoof a standard Modern Chrome
+app.commandLine.appendSwitch('user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -20,7 +23,12 @@ function createWindow() {
             // Since I don't have a preload script, I MUST use contextIsolation: false to access <webview> in React.
             // I will use contextIsolation: false to be safe, despite the user's snippet saying true. Logic: User snippet had preload, I don't.
             nodeIntegration: true, // often needed with contextIsolation: false
+            enableRemoteModule: true,
         },
+        // Hides "Chrome is being controlled by automated test software" bar
+        // Also helps with Google Login detection
+        enableLargerThanScreen: true,
+        autoHideMenuBar: true,
     });
 
     // Security: Handle the creation of webviews to ensure they are safe but functional
@@ -39,23 +47,35 @@ function createWindow() {
 
     // NUCLEAR OPTION: Strip X-Frame-Options and CSP headers to force sites to load in iframes/webviews
     // This bypasses "Refused to connect" caused by the site saying "Don't frame me"
-    win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-        const responseHeaders = Object.assign({}, details.responseHeaders);
+    // CRITICAL: We must apply the "Nuclear Option" and UA Spoofing to the shared partition used by tiles
+    // Otherwise, the tiles run without these protections because they use 'persist:main'
+    const partition = 'persist:main';
+    const streamSession = session.fromPartition(partition);
 
-        // Remove the headers that block embedding
-        const blockHeaders = ['x-frame-options', 'content-security-policy', 'frame-options'];
+    // 1. Spoof User Agent Globally for this session (Fixes "Browser not secure" for Google)
+    const agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
-        Object.keys(responseHeaders).forEach((header) => {
-            if (blockHeaders.includes(header.toLowerCase())) {
-                delete responseHeaders[header];
-            }
+    const applyFilters = (sess) => {
+        sess.webRequest.onBeforeSendHeaders((details, callback) => {
+            details.requestHeaders['User-Agent'] = agent;
+            callback({ cancel: false, requestHeaders: details.requestHeaders });
         });
 
-        callback({
-            cancel: false,
-            responseHeaders: responseHeaders,
+        sess.webRequest.onHeadersReceived((details, callback) => {
+            const responseHeaders = Object.assign({}, details.responseHeaders);
+            const blockHeaders = ['x-frame-options', 'content-security-policy', 'frame-options'];
+            Object.keys(responseHeaders).forEach((header) => {
+                if (blockHeaders.includes(header.toLowerCase())) {
+                    delete responseHeaders[header];
+                }
+            });
+            callback({ cancel: false, responseHeaders: responseHeaders });
         });
-    });
+    };
+
+    // Apply to both the default session (for the app itself) and the stream session (for tiles)
+    applyFilters(win.webContents.session);
+    applyFilters(streamSession);
 
     // Allow popups (essential for Google/Social Logins)
     win.webContents.setWindowOpenHandler(({ url }) => {

@@ -1,0 +1,36 @@
+/* Essential RGL Styles for Resizing */
+.react-grid-layout {
+    position: relative;
+    transition: height 200ms ease;
+}
+
+.react-grid-item {
+    transition: all 200ms ease;
+    transition-property: left, top;
+}
+
+.react-grid-item.cssTransforms {
+    transition-property: transform;
+}
+
+.react-grid-item.resizing {
+    z-index: 100;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom Handle Logic */
+.react-grid-item .react-resizable-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    bottom: 0;
+    right: 0;
+    background-position: bottom right;
+    padding: 0 3px 3px 0;
+    background-repeat: no-repeat;
+    background-origin: content-box;
+    box-sizing: border-box;
+    cursor: se-resize;
+    z-index: 9999 !important;
+    /* Force on top of webview */
+}
