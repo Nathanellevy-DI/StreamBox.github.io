@@ -76,7 +76,8 @@ export default function GameTile({ id }) {
                         <webview
                             ref={webviewRef}
                             src={url}
-                            partition={`persist:tile-${id}`}
+                            // Shared partition allows one login to work across all tiles (Google, ESPN, etc.)
+                            partition="persist:main"
                             className="w-full h-full"
                             allowpopups="true"
                             // Spoof Chrome to prevent "Browser not supported" blocks

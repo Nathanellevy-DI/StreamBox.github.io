@@ -57,6 +57,12 @@ function createWindow() {
         });
     });
 
+    // Allow popups (essential for Google/Social Logins)
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        // You might want to strip 'electron' specific restrictions for popups too
+        return { action: 'allow' };
+    });
+
     // If running via 'electron .' (not packaged), verify using isPackaged
     // This is more robust than NODE_ENV which defaults to undefined on Windows
     if (!app.isPackaged) {
