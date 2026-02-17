@@ -1,0 +1,17 @@
+{
+    "name": "StreamBox",
+    "short_name": "StreamBox",
+    "description": "Multi-stream dashboard. Watch everything at once.",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "orientation": "landscape",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}
