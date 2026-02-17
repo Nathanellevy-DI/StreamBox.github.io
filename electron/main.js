@@ -33,12 +33,14 @@ function createWindow() {
 
     // Security: Handle the creation of webviews to ensure they are safe but functional
     win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
-        // Strip away preload scripts if allowing untrusted content
-        delete webPreferences.preload;
+        // FORCE our preload script to inject the fake fullscreen logic
+        webPreferences.preload = path.join(__dirname, 'preload.js');
 
         // Disable Node.js integration in the *guest* page (the stream)
         webPreferences.nodeIntegration = false;
-        webPreferences.contextIsolation = true;
+        // CRITICAL: We need contextIsolation: false for the preload script to successfully
+        // overwrite Element.prototype.requestFullscreen in the main world.
+        webPreferences.contextIsolation = false;
 
         // CRITICAL FOR STREAMS: Disable webSecurity to allow cross-origin streams and mixed content
         // This effectively allows the webview to behave more like a real browser tab
@@ -87,7 +89,7 @@ function createWindow() {
     // This is more robust than NODE_ENV which defaults to undefined on Windows
     if (!app.isPackaged) {
         win.loadURL('http://localhost:5173');
-        win.webContents.openDevTools();
+        // win.webContents.openDevTools(); // Disabled for cleaner UX
     } else {
         win.loadFile(path.join(__dirname, '../dist/index.html'));
     }

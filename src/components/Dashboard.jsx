@@ -16,34 +16,112 @@ export default function Dashboard() {
     const [setupCount, setSetupCount] = useState(0);
     const [confirmed, setConfirmed] = useState(false);
 
-    // Initial Layout Generation
+    // Initial Layout Generation - Smart Fit
     const generateInitialLayout = () => {
-        const initialTiles = Array.from({ length: setupCount }).map((_, i) => ({
-            i: i.toString(),
-            x: (i % 2) * 6,
-            y: Math.floor(i / 2) * 4,
-            w: 6,
-            h: 4
-        }));
+        let cols = 2;
+        let w = 6;
+        let h = 4;
+
+        // Bento Grid Logic (No Dead Space)
+        const layouts = [];
+
+        if (setupCount === 1) {
+            layouts.push({ i: '0', x: 0, y: 0, w: 12, h: 8 });
+        } else if (setupCount === 2) {
+            layouts.push({ i: '0', x: 0, y: 0, w: 6, h: 8 });
+            layouts.push({ i: '1', x: 6, y: 0, w: 6, h: 8 });
+        } else if (setupCount === 3) {
+            layouts.push({ i: '0', x: 0, y: 0, w: 4, h: 8 });
+            layouts.push({ i: '1', x: 4, y: 0, w: 4, h: 8 });
+            layouts.push({ i: '2', x: 8, y: 0, w: 4, h: 8 });
+        } else if (setupCount === 4) {
+            layouts.push({ i: '0', x: 0, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '1', x: 6, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '2', x: 0, y: 4, w: 6, h: 4 });
+            layouts.push({ i: '3', x: 6, y: 4, w: 6, h: 4 });
+        } else if (setupCount === 5) {
+            // 2 Top (6x4), 3 Bottom (4x4)
+            layouts.push({ i: '0', x: 0, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '1', x: 6, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '2', x: 0, y: 4, w: 4, h: 4 });
+            layouts.push({ i: '3', x: 4, y: 4, w: 4, h: 4 });
+            layouts.push({ i: '4', x: 8, y: 4, w: 4, h: 4 });
+        } else if (setupCount === 6) {
+            // 3x2 Grid
+            cols = 3; w = 4; h = 4;
+        } else if (setupCount === 7) {
+            // 3 Top (4x4), 4 Bottom (3x4)
+            layouts.push({ i: '0', x: 0, y: 0, w: 4, h: 4 });
+            layouts.push({ i: '1', x: 4, y: 0, w: 4, h: 4 });
+            layouts.push({ i: '2', x: 8, y: 0, w: 4, h: 4 });
+            layouts.push({ i: '3', x: 0, y: 4, w: 3, h: 4 });
+            layouts.push({ i: '4', x: 3, y: 4, w: 3, h: 4 });
+            layouts.push({ i: '5', x: 6, y: 4, w: 3, h: 4 });
+            layouts.push({ i: '6', x: 9, y: 4, w: 3, h: 4 });
+        } else if (setupCount === 8) {
+            // 4x2 Grid
+            cols = 4; w = 3; h = 4;
+        } else if (setupCount === 9) {
+            // 3x3 Grid
+            cols = 3; w = 4; h = 3;
+        } else if (setupCount === 10) {
+            // "Hero & Squad" Layout
+            layouts.push({ i: '0', x: 0, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '1', x: 6, y: 0, w: 6, h: 4 });
+            layouts.push({ i: '2', x: 0, y: 4, w: 3, h: 2 });
+            layouts.push({ i: '3', x: 3, y: 4, w: 3, h: 2 });
+            layouts.push({ i: '4', x: 6, y: 4, w: 3, h: 2 });
+            layouts.push({ i: '5', x: 9, y: 4, w: 3, h: 2 });
+            layouts.push({ i: '6', x: 0, y: 6, w: 3, h: 2 });
+            layouts.push({ i: '7', x: 3, y: 6, w: 3, h: 2 });
+            layouts.push({ i: '8', x: 6, y: 6, w: 3, h: 2 });
+            layouts.push({ i: '9', x: 9, y: 6, w: 3, h: 2 });
+        } else if (setupCount <= 12) {
+            // 4x3 Grid
+            cols = 4; w = 3; h = 3;
+        } else if (setupCount <= 16) {
+            // 4x4 Grid
+            cols = 4; w = 3; h = 3;
+        } else if (setupCount <= 48) {
+            // High Density: 6 columns
+            cols = 6; w = 2; h = 2;
+        } else {
+            // Ultra Density: 12 columns
+            cols = 12; w = 1; h = 1;
+        }
+
+        let initialTiles;
+        if (layouts.length > 0) {
+            initialTiles = layouts.map(l => ({ ...l, minW: 1, minH: 1 }));
+        } else {
+            initialTiles = Array.from({ length: setupCount }).map((_, i) => ({
+                i: i.toString(),
+                x: (i % cols) * w,
+                y: Math.floor(i / cols) * h,
+                w: w,
+                h: h,
+                minW: 1,
+                minH: 1
+            }));
+        }
+
         setTiles(initialTiles);
         setConfirmed(true);
     };
 
     // Add a new tile dynamically
     const addTile = () => {
-        // Generate a unique ID based on timestamp or increment
-        // Simple increment based on max ID found to avoid collisions
         const maxId = tiles.length > 0 ? Math.max(...tiles.map(t => parseInt(t.i) || 0)) : -1;
         const newId = (maxId + 1).toString();
 
         const newTile = {
             i: newId,
-            x: (tiles.length % 2) * 6, // Alternating columns
-            y: Infinity, // RGL handles putting it at the bottom
+            x: (tiles.length % 2) * 6,
+            y: Infinity,
             w: 6,
             h: 4,
-            minW: 2,
-            minH: 2
+            minW: 1,
+            minH: 1
         };
         setTiles([...tiles, newTile]);
     };
@@ -52,6 +130,39 @@ export default function Dashboard() {
     const removeTile = (id) => {
         setTiles(prevTiles => prevTiles.filter(t => t.i !== id));
     };
+
+    // Dynamic Row Height Calculation
+    // Auto-shrinks so ALL tiles fit on screen without scrolling
+    const [rowHeight, setRowHeight] = useState(100);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const vh = window.innerHeight;
+
+            // Calculate the total grid rows occupied by tiles
+            let maxGridRows = 8; // Default
+            if (tiles.length > 0) {
+                maxGridRows = Math.max(...tiles.map(t => (t.y || 0) + (t.h || 1)));
+            }
+
+            // Safety: at least 1 row
+            const targetRows = Math.max(maxGridRows, 1);
+
+            const marginY = 4;
+            const totalMargin = marginY * (targetRows - 1);
+
+            // Calculate height per row to fit exactly in viewport
+            const calculatedHeight = Math.floor((vh - totalMargin - 10) / targetRows);
+
+            // Minimum of 10px per row (for extreme cases like 48 tiles)
+            setRowHeight(Math.max(calculatedHeight, 10));
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, [tiles]);
 
     if (!confirmed) {
         return (
@@ -89,15 +200,12 @@ export default function Dashboard() {
                 layouts={{ lg: tiles }}
                 breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                 cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-                rowHeight={100}
+                rowHeight={rowHeight}
                 margin={[4, 4]}
                 isDraggable={true}
                 isResizable={true}
                 draggableHandle=".drag-handle"
                 onLayoutChange={(layout) => {
-                    // Sync RGL layout changes back to our state so items don't jump around
-                    // We map the incoming layout props back to our tile objects
-                    // This is crucial for "persistence" during the session
                     const layoutMap = new Map(layout.map(l => [l.i, l]));
                     setTiles(prevTiles => prevTiles.map(t => {
                         const l = layoutMap.get(t.i);
@@ -117,7 +225,7 @@ export default function Dashboard() {
                             <GameTile id={tile.i} onRemove={() => removeTile(tile.i)} />
                         </div>
 
-                        {/* Custom Resize Handle - Always visible, high z-index, larger touch target */}
+                        {/* Custom Resize Handle */}
                         <span
                             className="react-resizable-handle react-resizable-handle-se absolute bottom-0 right-0 w-8 h-8 z-[100] cursor-se-resize flex items-center justify-center bg-blue-600/20 hover:bg-blue-600/80 rounded-tl-lg transition-colors"
                             style={{ backgroundImage: 'none' }}

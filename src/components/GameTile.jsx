@@ -109,6 +109,7 @@ export default function GameTile({ id, onRemove }) {
                             partition="persist:main"
                             className="w-full h-full"
                             allowpopups="true"
+                            allowFullScreen={true} // Needed for some players to render the button
                             // Spoof Chrome to prevent "Browser not supported" blocks
                             useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
                             // RE-ADDED: Explicitly disable security in the tag to ensure the renderer respects it
@@ -125,10 +126,12 @@ export default function GameTile({ id, onRemove }) {
                             src={url}
                             className="w-full h-full border-none"
                             title={`Tile ${id}`}
-                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                            allow="fullscreen; autoplay; encrypted-media"
+                            allowFullScreen
+                            referrerPolicy="no-referrer"
                         />
-                        {/* Fallback Overlay for blocked sites on Web */}
-                        <div className="absolute top-0 right-0 p-2 pointer-events-none">
+                        {/* Fallback: Open in new tab if iframe is blocked */}
+                        <div className="absolute top-0 right-0 p-2 pointer-events-none z-30">
                             <a
                                 href={url}
                                 target="_blank"
