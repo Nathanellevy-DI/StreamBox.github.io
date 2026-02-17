@@ -1,7 +1,9 @@
 {
   "name": "streambox",
+  "productName": "StreamBox",
+  "version": "1.0.0",
+  "description": "Multi-stream dashboard. Watch everything at once.",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -11,7 +13,57 @@
     "deploy": "npm run build:web && gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "electron ."
+    "electron": "electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.streambox.app",
+    "productName": "StreamBox",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "!node_modules/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "category": "public.app-category.entertainment"
+    },
+    "dmg": {
+      "title": "StreamBox",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/apple-touch-icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/apple-touch-icon.png"
+    }
   },
   "dependencies": {
     "lodash": "^4.17.23",
@@ -28,6 +80,7 @@
     "autoprefixer": "^10.4.24",
     "concurrently": "^9.2.1",
     "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
