@@ -26,10 +26,19 @@ import java.util.Set;
  */
 public class HeaderStrippingWebViewClient extends BridgeWebViewClient {
 
-    private static final Set<String> BLOCKED_HEADERS = new HashSet<>(Arrays.asList(
+    // Headers to strip from responses:
+    // - x-frame-options, content-security-policy, frame-options: block iframe embedding
+    // - content-encoding: HttpURLConnection auto-decompresses gzip, so this must be
+    //   removed to prevent WebView from double-decompressing
+    // - content-length: wrong after auto-decompression
+    // - transfer-encoding: chunked encoding is handled by HttpURLConnection
+    private static final Set<String> STRIPPED_HEADERS = new HashSet<>(Arrays.asList(
         "x-frame-options",
         "content-security-policy",
-        "frame-options"
+        "frame-options",
+        "content-encoding",
+        "content-length",
+        "transfer-encoding"
     ));
 
     public HeaderStrippingWebViewClient(Bridge bridge) {
@@ -45,28 +54,43 @@ public class HeaderStrippingWebViewClient extends BridgeWebViewClient {
             return super.shouldInterceptRequest(view, request);
         }
 
-        // Skip Capacitor's own local content
-        if (url.contains("localhost") || url.startsWith("capacitor://")) {
+        // Skip Capacitor's own local content — never intercept these
+        if (url.contains("localhost") || url.contains("127.0.0.1") || url.startsWith("capacitor://")) {
             return super.shouldInterceptRequest(view, request);
         }
 
-        // Only intercept HTML document requests (affected by X-Frame-Options)
-        // Sub-resources (images, CSS, JS) don't need header stripping
-        String accept = request.getRequestHeaders().get("Accept");
-        if (accept == null || !accept.contains("text/html")) {
+        // Only intercept HTML document requests (these are the ones affected by
+        // X-Frame-Options). Sub-resources like images, CSS, JS go through normally.
+        Map<String, String> reqHeaders = request.getRequestHeaders();
+        String accept = reqHeaders != null ? reqHeaders.get("Accept") : null;
+        boolean isDocumentRequest = (accept != null && accept.contains("text/html"));
+
+        if (!isDocumentRequest) {
             return super.shouldInterceptRequest(view, request);
         }
 
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            URL targetUrl = new URL(url);
+            HttpURLConnection conn = (HttpURLConnection) targetUrl.openConnection();
             conn.setRequestMethod(request.getMethod());
             conn.setInstanceFollowRedirects(true);
             conn.setConnectTimeout(15000);
-            conn.setReadTimeout(15000);
+            conn.setReadTimeout(30000);
 
-            // Forward all request headers from the WebView
-            for (Map.Entry<String, String> header : request.getRequestHeaders().entrySet()) {
-                conn.setRequestProperty(header.getKey(), header.getValue());
+            // Don't request compressed content — avoids the double-decompression issue
+            // entirely. HttpURLConnection auto-adds Accept-Encoding: gzip, which we
+            // need to override.
+            conn.setRequestProperty("Accept-Encoding", "identity");
+
+            // Forward request headers from the WebView
+            if (reqHeaders != null) {
+                for (Map.Entry<String, String> header : reqHeaders.entrySet()) {
+                    String key = header.getKey();
+                    // Don't overwrite our Accept-Encoding override
+                    if (!"Accept-Encoding".equalsIgnoreCase(key)) {
+                        conn.setRequestProperty(key, header.getValue());
+                    }
+                }
             }
 
             // Sync cookies from WebView → HttpURLConnection
@@ -77,47 +101,58 @@ public class HeaderStrippingWebViewClient extends BridgeWebViewClient {
             }
 
             conn.connect();
+            int responseCode = conn.getResponseCode();
 
             // Sync cookies from response → WebView
             Map<String, List<String>> headerFields = conn.getHeaderFields();
-            List<String> setCookies = headerFields.get("Set-Cookie");
-            if (setCookies != null) {
-                for (String cookie : setCookies) {
-                    cookieManager.setCookie(url, cookie);
+            if (headerFields != null) {
+                List<String> setCookies = headerFields.get("Set-Cookie");
+                if (setCookies != null) {
+                    for (String cookie : setCookies) {
+                        cookieManager.setCookie(url, cookie);
+                    }
                 }
             }
 
-            // Build clean response headers (strip blocking ones)
+            // Build clean response headers, stripping blocking & encoding headers
             Map<String, String> cleanHeaders = new HashMap<>();
-            for (Map.Entry<String, List<String>> entry : headerFields.entrySet()) {
-                String key = entry.getKey();
-                if (key == null) continue;
-                if (BLOCKED_HEADERS.contains(key.toLowerCase())) continue;
-                cleanHeaders.put(key, entry.getValue().get(0));
+            if (headerFields != null) {
+                for (Map.Entry<String, List<String>> entry : headerFields.entrySet()) {
+                    String key = entry.getKey();
+                    if (key == null) continue;
+                    if (STRIPPED_HEADERS.contains(key.toLowerCase())) continue;
+                    List<String> values = entry.getValue();
+                    if (values != null && !values.isEmpty()) {
+                        cleanHeaders.put(key, values.get(0));
+                    }
+                }
             }
 
-            // Parse content type
+            // Parse content type and charset
             String contentType = conn.getContentType();
             String mimeType = "text/html";
             String charset = "UTF-8";
             if (contentType != null) {
                 String[] parts = contentType.split(";");
                 mimeType = parts[0].trim();
-                for (String part : parts) {
-                    String trimmed = part.trim().toLowerCase();
-                    if (trimmed.startsWith("charset=")) {
-                        charset = part.trim().substring(8);
+                for (int i = 1; i < parts.length; i++) {
+                    String part = parts[i].trim().toLowerCase();
+                    if (part.startsWith("charset=")) {
+                        charset = parts[i].trim().substring(8).replace("\"", "").trim();
                     }
                 }
             }
 
-            int responseCode = conn.getResponseCode();
             String responseMessage = conn.getResponseMessage();
+            InputStream stream;
 
-            InputStream stream = (responseCode >= 400)
-                ? conn.getErrorStream()
-                : conn.getInputStream();
+            if (responseCode >= 400) {
+                stream = conn.getErrorStream();
+            } else {
+                stream = conn.getInputStream();
+            }
 
+            // If we couldn't get a stream, fall back to default
             if (stream == null) {
                 return super.shouldInterceptRequest(view, request);
             }
@@ -126,7 +161,7 @@ public class HeaderStrippingWebViewClient extends BridgeWebViewClient {
                 mimeType,
                 charset,
                 responseCode,
-                responseMessage != null ? responseMessage : "OK",
+                (responseMessage != null && !responseMessage.isEmpty()) ? responseMessage : "OK",
                 cleanHeaders,
                 stream
             );
