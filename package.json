@@ -66,15 +66,15 @@
     }
   },
   "dependencies": {
-    "@capacitor/core": "^8.1.0",
+    "@capacitor/core": "^6.0.0",
     "lodash": "^4.17.23",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-grid-layout": "^1.4.4"
   },
   "devDependencies": {
-    "@capacitor/android": "^8.1.0",
-    "@capacitor/cli": "^8.1.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.7",
