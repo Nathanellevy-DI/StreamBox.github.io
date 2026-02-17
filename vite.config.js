@@ -9,5 +9,5 @@ export default defineConfig(({ command }) => ({
     tailwindcss(),
   ],
   // Use relative paths for Electron, absolute for GitHub Pages
-  base: process.env.GITHUB_PAGES ? '/StreamBox/' : './',
+  base: './',
 }))
